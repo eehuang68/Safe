@@ -1,0 +1,238 @@
+#include <Keypad.h>
+#include "FPS_GT511C3.h"
+#include "SoftwareSerial.h"
+#include <Servo.h>
+
+const byte ROWS = 4; //four rows
+const byte COLS = 3; //three columns
+char keys[ROWS][COLS] = {
+  {'1', '2', '3'},
+  {'4', '5', '6'},
+  {'7', '8', '9'},
+  {'*', '0', '#'}
+};
+byte rowPins[ROWS] = {5,6,7,8}; //connect to the row pinouts of the keypad
+byte colPins[COLS] = {2, 3, 4}; //connect to the column pinouts of the keypad
+
+char input [6];
+char pw [6] = {'1','2','3','4','5','6'};
+
+Keypad keypad = Keypad( makeKeymap(keys), rowPins, colPins, ROWS, COLS );
+FPS_GT511C3 fps(10, 11);
+
+Servo myservo;
+int pos = 0; 
+
+void setup() {
+  pinMode(12, OUTPUT);
+   digitalWrite(12, LOW);
+   pinMode(13, OUTPUT);
+   digitalWrite(13, LOW);
+  det();
+  
+}
+  //det();
+  //delay(1000);
+
+void det(){
+  Serial.begin(9600);
+  delay(100);
+  fps.Open();
+  fps.SetLED(true);
+  myservo.attach(9);
+  myservo.write(0);
+ // while (true){ 
+    boolean flag1 = false;
+   pinMode(12, OUTPUT);
+   digitalWrite(12, LOW);
+   pinMode(13, OUTPUT);
+   digitalWrite(13, LOW);
+   flag1 = false;
+   //if (flag1 == false){
+      while (flag1 == false){
+      flag1 = fingerpad();
+      //fps.SetLED(false);
+      if (flag1 == true){
+          break;
+      }
+      else{
+        pinMode(13, OUTPUT);
+          digitalWrite(13, HIGH);
+          delay(1000);
+          digitalWrite(13, LOW);
+      }
+    }
+   //}
+   
+   
+    
+
+   /* for (int i = 0; i<5; i++){
+      flag1 = fingerpad();
+      if (flag1 == true){
+        break;
+      }
+      
+    }
+    if (flag1 == false){
+      //fps.SetLED(false);
+      //delay(3000);
+      
+      det();
+    }*/
+    fps.SetLED(false);
+    pinMode(12, OUTPUT);
+    digitalWrite(12, HIGH);
+    delay(1000);
+    digitalWrite(12, LOW);
+   
+
+    
+    boolean flag2 = false;
+    /*while (flag2 == false){
+      flag2 = key();
+      Serial.println(flag2);
+    }*/
+
+    for (int i = 0; i<5; i++){
+      flag2 = key();
+      if (flag2 == true){
+         fps.SetLED(false);
+         pinMode(12, OUTPUT);
+         digitalWrite(12, HIGH);
+         delay(1000);
+          digitalWrite(12, LOW);
+        break;
+      }
+      else{
+         pinMode(13, OUTPUT);
+         digitalWrite(13, HIGH);
+         delay(1000);
+          digitalWrite(13, LOW);
+      }
+    }
+    if (flag2 == false){
+      //delay(3000);
+      det();
+    }
+    //fps.SetLED(true);
+     pinMode(13, OUTPUT);
+     pinMode(12, OUTPUT);
+     digitalWrite(13, HIGH);
+     digitalWrite(12, HIGH);
+     //delay(3000);
+     digitalWrite(13,LOW);
+     digitalWrite(12,LOW);
+     myservo.write(90);
+
+     checkFinish();
+}
+
+void checkFinish(){
+  char key = keypad.getKey();
+      while (!key){
+        key = keypad.getKey();
+      }
+      if (key == '#'){
+        det();
+    }
+}
+
+
+boolean fingerpad(){
+  while (true){
+    Serial.println("Please press finger");
+    if (fps.IsPressFinger())
+    {
+      fps.CaptureFinger(true);
+      int id = fps.Identify1_N();
+     Serial.println(id);
+      if (id <200)
+      {
+        Serial.print("Verified ID:");
+        Serial.println(id);
+         pinMode(13, OUTPUT);
+         //digitalWrite(13, HIGH);
+         //delay(1000);
+         digitalWrite(13,LOW);
+         //myservo.write(175);
+        delay(15);
+        Serial.println("done");
+        return true;
+    }
+      else
+      {
+        Serial.println("Finger not found");
+        pinMode(12, OUTPUT);
+        //digitalWrite(12, HIGH);
+        //delay(3000);
+        //digitalWrite(12, LOW);
+        Serial.println("done");
+        return false;
+      }
+    }
+    else{
+      continue;
+    }
+
+  }
+}
+
+boolean key(){
+  Serial.println("Enter passcode");
+  data();
+  for (int i = 0; i<6; i++){
+    Serial.println(input[i]);
+  }
+
+  boolean flag = check();
+  //Serial.println(flag);
+
+  if (flag == true){
+    Serial.println("pw correct!");
+    pinMode(13, OUTPUT);
+    digitalWrite(13, HIGH);
+    //delay(3000);
+    digitalWrite(13, LOW);
+    //myservo.write(20);
+    delay(15);
+    return(true);
+  }
+  else{
+    Serial.println("try again!");
+    pinMode(12, OUTPUT);
+    digitalWrite(12, HIGH);
+    //delay(3000);
+    digitalWrite(12, LOW);
+    return(false);
+  }
+}
+void data (){
+  int i = 0;
+   while (i<6){
+    //Serial.println(i);
+    char key = keypad.getKey();
+    while (!key){
+      key = keypad.getKey();
+    }
+    if (key) {
+      input[i] = key;
+      Serial.println(key);
+     // Serial.println(input[i]);
+   }
+   i++;
+  }
+}
+
+boolean check(){
+  for (int i = 0; i<6; i++){
+    if (input[i]!=pw[i]){
+      return(false);
+    }
+  }
+  return(true);
+}
+
+void loop(){
+  
+}
